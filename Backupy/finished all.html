@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Click & slide RJ</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="game">
+        <div id="slider">
+            <div id="arrowLeft" class="sliderArrow"></div>
+            <div id="smallImg">
+                <div class="img skullBackground"></div>
+                <div class="img pigBackground"></div>
+                <div class="img fighterBackground"></div>
+                <div class="img skullBackground"></div>
+            </div>
+            <div id="arrowRight" class="sliderArrow"></div>
+        </div>
+        <div id="gameModes">
+            <button id="3x3">3 x 3</button>
+            <button id="4x4">4 x 4</button>
+            <button id="5x5">5 x 5</button>
+            <button id="6x6">6 x 6</button>
+        </div>
+        <div id="timer">
+            <div class="digit" style="background-image: url('./Grafiki/cyferki/c0.gif');"></div>
+            <div class="digit" style="background-image: url('./Grafiki/cyferki/c0.gif');"></div>
+            <div class="colon"></div>
+            <div class="digit" style="background-image: url('./Grafiki/cyferki/c0.gif');"></div>
+            <div class="digit" style="background-image: url('./Grafiki/cyferki/c0.gif');"></div>
+            <div class="colon"></div>
+            <div class="digit" style="background-image: url('./Grafiki/cyferki/c0.gif');"></div>
+            <div class="digit" style="background-image: url('./Grafiki/cyferki/c0.gif');"></div>
+            <div class="dot"></div>
+            <div class="digit" style="background-image: url('./Grafiki/cyferki/c0.gif');"></div>
+            <div class="digit" style="background-image: url('./Grafiki/cyferki/c0.gif');"></div>
+            <div class="digit" style="background-image: url('./Grafiki/cyferki/c0.gif');"></div>
+        </div>
+        <div id="cookieHighScore">
+            <p id="top10Title"></p>
+            <ul id="top10List"></ul>
+        </div>
+    </div>
+
+    <script>
+        const sizes = { "3x3": 160, "4x4": 120, "5x5": 96, "6x6": 80 }
+        const game = document.getElementById("game")
+        const gameModes = document.getElementById("gameModes")
+
+        // Add gameboard generating listeners to buttons
+        for (let x = 0; x < gameModes.childElementCount; x++) {
+            gameModes.children[x].addEventListener("click", getGameboardSize);
+        }
+
+        // Add arrow event listeners 
+        document.getElementById("arrowLeft").addEventListener("click", arrowSlide)
+        document.getElementById("arrowRight").addEventListener("click", arrowSlide)
+
+        function arrowSlide(event) {
+            // Remove event listeners from arrows
+            event.target.removeEventListener("click", arrowSlide)
+
+            var imageSliderBox = document.getElementById("smallImg")
+            var imageScrollAmount = imageSliderBox.scrollLeft;
+
+            if (event.target.id == "arrowLeft") {
+                if (imageScrollAmount == 0) {
+                    imageScrollTo(-100)
+                } else {
+                    imageScrollBy(-100, false)
+                }
+
+            } else if (event.target.id == "arrowRight") {
+                if (imageScrollAmount == 200) {
+                    imageScrollTo(100)
+                } else {
+                    imageScrollBy(100, false)
+                }
+            }
+        }
+
+        function imageScrollTo(valueX) {
+            let slidedBox = document.getElementById("smallImg");
+
+            if (valueX > 0) {
+                imageScrollBy(100, true)
+            } else {
+                imageScrollBy(-100, true)
+            }
+        }
+
+        function imageScrollBy(valueX, isEnd) {
+            let slidedBox = document.getElementById("smallImg");
+            let scrollvalue = slidedBox.scrollLeft
+
+            if (valueX > 0) {
+                let scroll = setInterval(() => {
+                    slidedBox.scrollBy(1, 0)
+                    if (slidedBox.scrollLeft == scrollvalue + valueX) {
+                        clearInterval(scroll)
+                    }
+                }, 1);
+                setTimeout(() => {
+                    if (isEnd == true) {
+                        slidedBox.scrollTo(0, 0)
+                    }
+                }, 400);
+            } else {
+                if (isEnd == true) {
+                    slidedBox.scrollTo(300, 0)
+                    let scroll = setInterval(() => {
+                        slidedBox.scrollBy(-1, 0)
+                        if (slidedBox.scrollLeft == 200) {
+                            clearInterval(scroll)
+                        }
+                    }, 1);
+                } else {
+                    let scroll = setInterval(() => {
+                        slidedBox.scrollBy(-1, 0)
+                        if (slidedBox.scrollLeft == scrollvalue + valueX) {
+                            clearInterval(scroll)
+                        }
+                    }, 1);
+                }
+            }
+
+            setTimeout(() => {
+                // Get selected image
+                getMiniImageClass(slidedBox.scrollLeft)
+
+                // Add event listeners back
+                document.getElementById("arrowLeft").addEventListener("click", arrowSlide)
+                document.getElementById("arrowRight").addEventListener("click", arrowSlide)
+            }, 400);
+        }
+
+        function getMiniImageClass(currScroll) {
+            if (currScroll == 0) {
+                createGame.currentImage = createGame.imageClasses[0]
+            } else if (currScroll == 100) {
+                createGame.currentImage = createGame.imageClasses[1]
+            } else if (currScroll == 200) {
+                createGame.currentImage = createGame.imageClasses[2]
+            } else if (currScroll == 300) {
+                createGame.currentImage = createGame.imageClasses[0]
+            }
+        }
+
+        function getGameboardSize(event) {
+            // Clear timer interval if exists & clear timer iamges
+            clearInterval(timer)
+            for (let digitIndex = 0; digitIndex < document.getElementById("timer").childElementCount; digitIndex++) {
+                if (digitIndex == 2 || digitIndex == 5 || digitIndex == 8) {
+                    continue;
+                } else {
+                    document.getElementById("timer").children[digitIndex].style = `background-image: url('./Grafiki/cyferki/c0.gif')`
+                }
+            }
+
+            // Remove existing gameboard
+            if (document.getElementById("gameBoard") != null) {
+                document.getElementById("gameBoard").remove();
+            }
+
+            // Create game of selected size
+            createGame.generateGameboard()
+
+            // Add cookie title
+            document.getElementById("top10Title").innerText = `TOP10 TRYBU ${event.target.id}`
+            generateHighScore(event.target.id.substr(0, 1))
+
+            const gameBoard = document.getElementById("gameBoard")
+            var gameMode = event.target.id
+
+            // Create tiles for a picture
+            createGame.createTiles(event.target.id)
+        }
+
+        var createGame = {
+            positions: [],
+            blankStyle: {},
+            gameSizeInt: "",
+            gameSizeSurface: "",
+            finishTime: "",
+            imageClasses: ["skullBackground", "pigBackground", "fighterBackground"],
+            currentImage: "",
+
+            generateGameboard: function () {
+                let divek = document.createElement("div")
+                divek.id = "gameBoard"
+                game.appendChild(divek)
+            },
+
+            createTiles: function (gameBoardSize) {
+                createGame.gameSizeInt = parseInt(gameBoardSize[0])
+                createGame.gameSizeSurface = createGame.gameSizeInt * createGame.gameSizeInt;
+                let value = sizes[`${gameBoardSize}`];
+
+                var positions = []
+                for (let x = 0; x < createGame.gameSizeInt; x++) {
+                    for (let y = 0; y < createGame.gameSizeInt; y++) {
+                        // Set image positions
+                        let Top = value * x;
+                        let Left = value * y;
+                        let endPosition = { top: Top, left: Left }
+                        positions.push(endPosition)
+                    }
+                }
+
+                createGame.positions = positions;
+
+                // Generate tiles
+                var order = 0
+                for (let x = 0; x < createGame.gameSizeSurface; x++) {
+                    var pos = positions[x]
+                    var field = document.createElement("div")
+
+                    field.style = `top: ${pos.top}px; left: ${pos.left}px; background-position: -${pos.left}px -${pos.top}px`;
+
+                    if (order != createGame.gameSizeSurface - 1) {
+                        field.className = `goodImagePart image${createGame.gameSizeInt} ${createGame.currentImage}`
+                    } else {
+                        field.id = "badImagePart"
+                        field.className = `image${createGame.gameSizeInt} ${createGame.currentImage}`;
+                        createGame.blankStyle = { top: pos.top, left: pos.left }
+                    }
+
+                    field.setAttribute("order", order)
+                    gameBoard.appendChild(field)
+
+                    order++
+                }
+                createGame.shuffleTiles()
+            },
+
+            shuffleTiles: function (event) {
+                var previousMoveDireciton = ""
+                var counter = 0
+                let badImage = document.getElementById("badImagePart")
+
+                var xD = setInterval(() => {
+                    while (true) {
+                        // Draw direction
+                        var moveDirection = ""
+                        Math.random() >= 0.5 ? moveDirection = "v" : moveDirection = "h"
+                        if (moveDirection == "v") {
+                            Math.random() >= 0.5 ? moveDirection = "top" : moveDirection = "bottom"
+                        } else {
+                            Math.random() >= 0.5 ? moveDirection = "left" : moveDirection = "right"
+                        }
+
+                        if (!(previousMoveDireciton == "top" && moveDirection == "bottom") &&
+                            !(previousMoveDireciton == "left" && moveDirection == "right")
+                        ) {
+                            // Get blank's child index
+                            for (var childIndex = 0; childIndex < gameBoard.childElementCount; childIndex++) {
+                                if (gameBoard.children[childIndex].id == "badImagePart") {
+                                    break;
+                                }
+                            }
+
+                            if (moveDirection == "right" &&
+                                badImage.nextSibling != null &&
+                                (childIndex + 1) % createGame.gameSizeInt != 0
+                            ) {
+                                let nextSibLeft = badImage.nextSibling.style.left
+                                let badImageLeft = badImage.style.left
+
+                                // Change position for sibling
+                                badImage.nextSibling.style.left = badImageLeft
+
+                                // Change position for bad image
+                                badImage.style.left = nextSibLeft
+
+                                // Change location of bad image
+                                if (badImage.nextSibling.nextSibling != null) {
+                                    gameBoard.insertBefore(badImage, badImage.nextSibling.nextSibling)
+                                } else {
+                                    gameBoard.insertBefore(badImage, null)
+                                }
+
+                                previousMoveDireciton = moveDirection;
+                                break;
+                            } else if (
+                                moveDirection == "left" &&
+                                badImage.previousSibling != null &&
+                                childIndex % createGame.gameSizeInt != 0
+                            ) {
+                                let prevSibLeft = badImage.previousSibling.style.left
+                                let badImageLeft = badImage.style.left
+
+                                // Change position for sibling
+                                badImage.previousSibling.style.left = badImageLeft
+
+                                // Change position for bad image
+                                badImage.style.left = prevSibLeft
+
+                                // Change location of bad image
+                                gameBoard.insertBefore(badImage, badImage.previousSibling)
+
+                                previousMoveDireciton = moveDirection;
+                                break;
+                            } else if (moveDirection == "top" && childIndex - createGame.gameSizeInt >= 0) {
+                                // Get top element index
+                                for (var topIndex = 0; topIndex < createGame.gameSizeSurface; topIndex++) {
+                                    if (gameBoard.children[topIndex] == badImage) {
+                                        topIndex -= createGame.gameSizeInt;
+                                        break;
+                                    }
+                                }
+
+                                let sibTop = gameBoard.children[topIndex].style.top
+                                let badImageTop = badImage.style.top
+
+                                // Change position for sibling
+                                gameBoard.children[topIndex].style.top = badImageTop
+
+                                // Change position for bad image
+                                badImage.style.top = sibTop
+
+                                // Change location of bad image
+                                gameBoard.insertBefore(badImage, gameBoard.children[topIndex])
+
+                                // Change location of good image
+                                for (var badIndex = 0; badIndex < createGame.gameSizeSurface; badIndex++) {
+                                    if (gameBoard.children[badIndex] == badImage) {
+                                        break;
+                                    }
+                                }
+                                gameBoard.insertBefore(gameBoard.children[badIndex + 1], gameBoard.children[badIndex + createGame.gameSizeInt + 1])
+
+                                previousMoveDireciton = moveDirection;
+                                break;
+                            } else if (moveDirection == "bottom" && childIndex + createGame.gameSizeInt < createGame.gameSizeSurface) {
+                                // Get bottom element index
+                                for (var bottomIndex = 0; bottomIndex < createGame.gameSizeSurface; bottomIndex++) {
+                                    if (gameBoard.children[bottomIndex] == badImage) {
+                                        bottomIndex += createGame.gameSizeInt;
+                                        break;
+                                    }
+                                }
+
+                                let bottomSibTop = gameBoard.children[bottomIndex].style.top
+                                let badImageTop = badImage.style.top
+
+                                // Change position for sibling
+                                gameBoard.children[bottomIndex].style.top = badImageTop
+
+                                // Change position for bad image
+                                badImage.style.top = bottomSibTop
+
+                                // Change location of bad image
+                                if (bottomIndex + 1 == createGame.gameSizeInt * createGame.gameSizeInt) {
+                                    gameBoard.insertBefore(badImage, null)
+                                } else {
+                                    gameBoard.insertBefore(badImage, gameBoard.children[bottomIndex + 1])
+                                }
+
+                                // Change location of good image
+                                // Get location of bad image
+                                for (var badIndex = 0; badIndex < createGame.gameSizeInt * createGame.gameSizeInt; badIndex++) {
+                                    if (gameBoard.children[badIndex] == badImage) {
+                                        break;
+                                    }
+                                }
+                                gameBoard.insertBefore(gameBoard.children[badIndex - 1], gameBoard.children[badIndex - createGame.gameSizeInt])
+
+                                previousMoveDireciton = moveDirection;
+                                break;
+                            }
+                        }
+                    }
+                    counter++
+
+                    if (counter == Math.pow(createGame.gameSizeInt, 3)) {
+                        createGame.afterShuffle();
+                        clearInterval(xD)
+                    }
+                }, 25);
+            },
+
+            afterShuffle: function () {
+                // Make tiles clickable
+                for (let x = 0; x < createGame.gameSizeSurface; x++) {
+                    if (gameBoard.children[x].id == "badImagePart") {
+                        continue;
+                    } else {
+                        gameBoard.children[x].addEventListener("click", tileClicked)
+                    }
+                }
+
+                // TIMER
+                countTime()
+            },
+
+            checkWin: function () {
+                let win = false;
+                for (let x = 0; x < createGame.gameSizeSurface; x++) {
+                    if (gameBoard.children[x].getAttribute("order") != x) {
+                        win = false;
+                        break;
+                    }
+                    win = true;
+                }
+
+                if (win) {
+                    for (let x = 0; x < createGame.gameSizeSurface; x++) {
+                        gameBoard.children[x].removeEventListener("click", tileClicked)
+                    }
+                    // TIMER
+                    clearInterval(timer);
+
+                    // Display win screen
+                    setTimeout(() => {
+                        let divOverlayWin = document.createElement("div")
+                        let divOverlayBox = document.createElement("div")
+                        divOverlayWin.id = "gameWin"
+                        divOverlayBox.id = "winBox"
+
+                        let aWin = document.createElement("a")
+                        aWin.classList = "winTitle"
+                        aWin.innerText = "WYGRAŁEŚ!!"
+                        divOverlayBox.appendChild(aWin);
+
+                        let aNick = document.createElement("a")
+                        aNick.innerText = "Podaj swój nick, może dostaniesz się do TOP10?"
+                        divOverlayBox.appendChild(aNick)
+
+                        let aTime = document.createElement("a")
+                        aTime.innerText = `Twój czas: ${createGame.finishTime}`
+                        divOverlayBox.appendChild(aTime)
+
+                        let inputUN = document.createElement("input")
+                        inputUN.type = "text"
+                        inputUN.name = "userName"
+                        inputUN.id = "userName"
+                        divOverlayBox.appendChild(inputUN)
+
+                        let bt = document.createElement("button")
+                        bt.onclick = function () {
+                            var userNameValue = document.getElementById("userName").value
+                            generateCookie(userNameValue, `${createGame.gameSizeInt}`, createGame.finishTime)
+                            generateHighScore(`${createGame.gameSizeInt}`)
+                            document.getElementById("gameWin").remove()
+                        }
+                        bt.innerText = "OK"
+                        divOverlayBox.appendChild(bt)
+
+                        divOverlayWin.appendChild(divOverlayBox)
+                        document.getElementById("game").insertBefore(divOverlayWin, document.getElementById("slider"))
+                    }, 10);
+                }
+            },
+        }
+
+        function countTime() {
+            let clock = document.getElementById("timer")
+            var startTime = new Date().getTime()
+            let hour = 1000 * 60 * 60
+            let minute = 1000 * 60
+            let second = 1000
+            let milisecond = 1
+
+            timer = setInterval(() => {
+                var currTime = new Date().getTime()
+                var timeDiff = currTime - startTime
+                let hAmount, minAmount, sAmount, msAmount
+
+                if (Math.floor(timeDiff / hour) > 0) {
+                    hAmount = Math.floor(timeDiff / hour)
+                    timeDiff -= (hAmount * hour)
+                }
+                if (Math.floor(timeDiff / minute) > 0) {
+                    minAmount = Math.floor(timeDiff / minute)
+                    timeDiff -= (minAmount * minute)
+                }
+                if (Math.floor(timeDiff / second) > 0) {
+                    sAmount = Math.floor(timeDiff / second)
+                    timeDiff -= (sAmount * second)
+                }
+                if (Math.floor(timeDiff / milisecond) > 0) {
+                    msAmount = Math.floor(timeDiff / milisecond)
+                    timeDiff -= (msAmount * milisecond)
+                }
+
+                hAmount == undefined ? hAmount = "00" : hAmount = hAmount.toString();
+                minAmount == undefined ? minAmount = "00" : minAmount = minAmount.toString();
+                sAmount == undefined ? sAmount = "00" : sAmount = sAmount.toString();
+                msAmount == undefined ? msAmount = "000" : msAmount = msAmount.toString();
+
+                if (hAmount.length == 1) {
+                    hAmount = "0" + hAmount
+                }
+                if (minAmount.length == 1) {
+                    minAmount = "0" + minAmount
+                }
+                if (sAmount.length == 1) {
+                    sAmount = "0" + sAmount
+                }
+                if (msAmount.length == 2) {
+                    msAmount = "0" + msAmount
+                } else if (msAmount.length == 1) {
+                    msAmount = "00" + msAmount
+                }
+
+                var valueToSetClock = `${hAmount}:${minAmount}:${sAmount}:${msAmount}`;
+                createGame.finishTime = valueToSetClock;
+
+                // Set clock to time
+                for (let digitIndex = 0; digitIndex < clock.childElementCount; digitIndex++) {
+                    if (digitIndex == 2 || digitIndex == 5 || digitIndex == 8) {
+                        continue;
+                    } else {
+                        clock.children[digitIndex].style = `background-image: url('./Grafiki/cyferki/c${valueToSetClock[digitIndex]}.gif')`
+                    }
+                }
+            }, 50);
+        }
+
+        function getAvailableMove(startOrder) {
+            let possibleMove;
+            document.getElementById("gameBoard").children
+            console.log("pos move " + possibleMove);
+
+            return possibleMove
+        }
+
+        // Move tile to empty field
+        function tileClicked(event) {
+            let elementClickedIndex;
+            for (let x = 0; x < createGame.gameSizeSurface; x++) {
+                if (gameBoard.children[x] == event.target) {
+                    elementClickedIndex = x
+                    break;
+                }
+            }
+            let clickedElement = gameBoard.children[elementClickedIndex]
+            let badImage = document.getElementById("badImagePart")
+
+            // Get next sibling Id
+            if (event.target.nextSibling != null &&
+                event.target.nextSibling == badImage &&
+                (elementClickedIndex + 1) % createGame.gameSizeInt != 0
+            ) {
+                // Visible switch
+                let tempHolder = clickedElement.style.left
+
+                // TrueImg = blank
+                clickedElement.style.left = badImage.style.left
+                // Blank = trueImg
+                badImage.style.left = tempHolder
+
+                // Invisible switch
+                gameBoard.insertBefore(clickedElement, badImage.nextSibling)
+            } else if (
+                event.target.previousSibling != null &&
+                event.target.previousSibling == badImage &&
+                elementClickedIndex % createGame.gameSizeInt != 0
+            ) {
+                // Visible switch
+                let tempHolder = clickedElement.style.left
+
+                // TrueImg = blank
+                clickedElement.style.left = badImage.style.left
+                // Blank = trueImg
+                badImage.style.left = tempHolder
+
+                // Invisible switch
+                gameBoard.insertBefore(clickedElement, badImage)
+            } else if (
+                elementClickedIndex - createGame.gameSizeInt >= 0 &&
+                gameBoard.children[elementClickedIndex - createGame.gameSizeInt] == badImage
+            ) {
+                // Visible switch
+                let tempHolder = clickedElement.style.top
+
+                // TrueImg = blank
+                clickedElement.style.top = badImage.style.top
+                // Blank = trueImg
+                badImage.style.top = tempHolder
+
+                // Invisible switch
+                gameBoard.insertBefore(clickedElement, badImage.nextSibling)
+                gameBoard.insertBefore(badImage, gameBoard.children[elementClickedIndex + 1])
+            } else if (
+                elementClickedIndex + createGame.gameSizeInt <= createGame.gameSizeSurface &&
+                gameBoard.children[elementClickedIndex + createGame.gameSizeInt] == badImage
+            ) {
+                // Visible switch
+                let tempHolder = clickedElement.style.top
+
+                // TrueImg = blank
+                clickedElement.style.top = badImage.style.top
+                // Blank = trueImg
+                badImage.style.top = tempHolder
+
+                // Invisible switch
+                gameBoard.insertBefore(clickedElement, badImage.nextSibling)
+                gameBoard.insertBefore(badImage, gameBoard.children[elementClickedIndex])
+            }
+
+            // Check for win condition
+            createGame.checkWin()
+        }
+
+        function generateCookie(userNameValue, gameMode, time) {
+            let expires = new Date(Date.now() + 1000 * 60 * 60 * 168 * 52 * 5)
+            document.cookie = `${encodeURIComponent(userNameValue)}${gameMode}=${time}; expires=${expires.toUTCString()}`;
+        }
+
+        function generateHighScore(gameMode) {
+            var wholeList = document.getElementById("top10List")
+
+            // Clear table if has records  (intentional mistake in variable speling :D)
+            if (wholeList.childElementCount > 0) {
+                let childs = wholeList.childElementCount
+                for (let x = 0; x < childs; x++) {
+                    wholeList.children[0].remove()
+                }
+            }
+
+            let allCookies = document.cookie.split(";");
+
+            for (let currCookieIndex = 0; currCookieIndex < allCookies.length; currCookieIndex++) {
+                let currCookie = allCookies[currCookieIndex].split("=")
+                let cookieGameMode = currCookie[0].substr(-1)
+                let cookieUserName = decodeURIComponent(currCookie[0].substr(0, currCookie[0].length - 1))
+                let cookieValue = currCookie[1]
+
+                if (cookieGameMode == gameMode) {
+                    let scoreRow = document.createElement("li")
+                    scoreRow.innerText = `${cookieUserName} - ${cookieValue}`
+
+                    if (wholeList.childElementCount != 0) {
+                        wholeList.append(scoreRow)
+
+                        // Bubble sort
+                        for (let x = 0; x < wholeList.childElementCount; x++) {
+                            for (let y = 0; y < wholeList.childElementCount - 1; y++) {
+                                let firstElementValue = wholeList.children[y].innerText.substr(-12)
+                                let secondElementValue = wholeList.children[y + 1].innerText.substr(-12)
+                                if (firstElementValue > secondElementValue) {
+                                    document.getElementById("top10List").insertBefore(
+                                        document.getElementById("top10List").children[y],
+                                        document.getElementById("top10List").children[y + 2])
+                                }
+                            }
+                        }
+                    } else {
+                        wholeList.append(scoreRow)
+                    }
+
+                    if (wholeList.childElementCount > 10) {
+                        wholeList.lastChild.remove()
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

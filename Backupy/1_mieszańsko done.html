@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Click & slide RJ</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="game">
+        <div id="slider">
+            <div class="sliderArrow"></div>
+            <div id="smallImg"></div>
+            <div class="sliderArrow"></div>
+        </div>
+        <div id="gameModes">
+            <button id="3x3" value="3">3 x 3</button>
+            <button id="4x4">4 x 4</button>
+            <button id="5x5">5 x 5</button>
+            <button id="6x6">6 x 6</button>
+        </div>
+    </div>
+
+    <script>
+        const sizes = { "3x3": 160, "4x4": 120, "5x5": 96, "6x6": 80 }
+        const game = document.getElementById("game")
+        const gameModes = document.getElementById("gameModes")
+
+        function getGameboardSize(event) {
+
+            // IMPORTANT
+            // IMPORTANT
+            // IMPORTANT
+            //          Watch out for game.childElementCount in later stages
+            //          as the number might increase
+            // IMPORTANT
+            // IMPORTANT
+            // |a.left - b.left| + |a.top - b.top| == jedna szerokość
+            // IMPORTANT
+
+            // Remove existing gameboard
+            if (game.childElementCount > 2) {
+                document.getElementById("gameBoard").remove();
+            }
+            // Remove event listeners from other buttons
+            for (let x = 0; x < gameModes.childElementCount; x++) {
+                gameModes.children[x].removeEventListener("click", getGameboardSize)
+            }
+
+            // Create game of selected size
+            createGame.generateGameboard()
+
+            const gameBoard = document.getElementById("gameBoard")
+            var gameMode = event.target.id
+
+            // Create tiles for a picture
+            createGame.createTiles(event.target.id)
+        }
+
+        var createGame = {
+            positions: [],
+            blankStyle: {},
+            gameSizeInt: "",
+
+            generateGameboard: function () {
+                let divek = document.createElement("div")
+                divek.id = "gameBoard"
+                game.appendChild(divek)
+            },
+
+            createTiles: function (gameBoardSize) {
+                console.log(gameBoardSize);
+                createGame.gameSizeInt = parseInt(gameBoardSize[0])
+                let value = sizes[`${gameBoardSize}`];
+
+                var positions = []
+                for (let x = 0; x < createGame.gameSizeInt; x++) {
+                    for (let y = 0; y < createGame.gameSizeInt; y++) {
+                        // Set image positions
+                        let Top = value * x;
+                        let Left = value * y;
+                        let endPosition = { top: Top, left: Left }
+                        positions.push(endPosition)
+                        // background position: -Left -Top
+                    }
+                }
+
+                createGame.positions = positions;
+
+                // Generate tiles
+                var order = 0
+                for (let x = 0; x < createGame.gameSizeInt * createGame.gameSizeInt; x++) {
+                    var pos = positions[x]
+                    console.log(pos);
+                    var field = document.createElement("div")
+
+                    field.style = `top: ${pos.top}px; left: ${pos.left}px; background-position: -${pos.left}px -${pos.top}px`;
+
+                    if (order != createGame.gameSizeInt * createGame.gameSizeInt - 1) {
+                        field.className = `goodImagePart image${createGame.gameSizeInt}`
+                    } else {
+                        field.id = "badImagePart"
+                        field.className = `image${createGame.gameSizeInt}`;
+                        createGame.blankStyle = { top: pos.top, left: pos.left }
+                    }
+
+                    field.setAttribute("order", order)
+                    gameBoard.appendChild(field)
+
+                    order++
+                }
+                createGame.shuffleTiles()
+            },
+
+            shuffleTiles: function () {
+                console.log("shuffling...");
+
+
+                let badImage = document.getElementById("badImagePart")
+                console.log(badImage.previousSibling)
+                var previousMoveDireciton = ""
+                var counter = 0
+
+
+                var xD = setInterval(() => {
+                    while (true) {
+                        // Draw direction
+                        var moveDirection = ""
+                        Math.random() >= 0.5 ? moveDirection = "v" : moveDirection = "h"
+                        if (moveDirection == "v") {
+                            Math.random() >= 0.5 ? moveDirection = "top" : moveDirection = "bottom"
+                        } else {
+                            Math.random() >= 0.5 ? moveDirection = "left" : moveDirection = "right"
+                        }
+
+                        if (!(previousMoveDireciton == "top" && moveDirection == "bottom") &&
+                            !(previousMoveDireciton == "left" && moveDirection == "right")
+                        ) {
+                            // Get blank's child index
+                            for (var childIndex = 0; childIndex < gameBoard.childElementCount; childIndex++) {
+                                if (gameBoard.children[childIndex].id == "badImagePart") {
+                                    break;
+                                }
+                            }
+
+                            if (moveDirection == "right" &&
+                                badImage.nextSibling != null &&
+                                (childIndex + 1) % createGame.gameSizeInt != 0
+                            ) {
+                                let nextSibLeft = badImage.nextSibling.style.left
+                                let badImageLeft = badImage.style.left
+
+                                // Change position for sibling
+                                badImage.nextSibling.style.left = badImageLeft
+
+                                // Change position for bad image
+                                badImage.style.left = nextSibLeft
+
+                                // Change location of bad image
+                                if (badImage.nextSibling.nextSibling != null) {
+                                    gameBoard.insertBefore(badImage, badImage.nextSibling.nextSibling)
+                                } else {
+                                    gameBoard.insertBefore(badImage, null)
+                                }
+
+                                previousMoveDireciton = moveDirection;
+                                break;
+                            } else if (
+                                moveDirection == "left" &&
+                                badImage.previousSibling != null &&
+                                // Ostatni po lewej - child index poprzedniego elementu % createGame.gameSize + 1 != 0    
+                                childIndex % createGame.gameSizeInt != 0
+                            ) {
+                                let prevSibLeft = badImage.previousSibling.style.left
+                                let badImageLeft = badImage.style.left
+
+                                // Change position for sibling
+                                badImage.previousSibling.style.left = badImageLeft
+
+                                // Change position for bad image
+                                badImage.style.left = prevSibLeft
+
+                                // Change location of bad image
+                                gameBoard.insertBefore(badImage, badImage.previousSibling)
+
+                                previousMoveDireciton = moveDirection;
+                                break;
+                            } else if (moveDirection == "top" && childIndex - createGame.gameSizeInt >= 0) {
+                                // Get top element index
+                                for (var topIndex = 0; topIndex < createGame.gameSizeInt * createGame.gameSizeInt; topIndex++) {
+                                    if (gameBoard.children[topIndex] == badImage) {
+                                        topIndex -= createGame.gameSizeInt;
+                                        break;
+                                    }
+                                }
+                                console.log(topIndex);
+
+                                let sibTop = gameBoard.children[topIndex].style.top
+                                let badImageTop = badImage.style.top
+
+                                // Change position for sibling
+                                gameBoard.children[topIndex].style.top = badImageTop
+
+                                // Change position for bad image
+                                badImage.style.top = sibTop
+
+                                // Change location of bad image
+                                gameBoard.insertBefore(badImage, gameBoard.children[topIndex])
+
+                                // Change location of good image
+                                for (var badIndex = 0; badIndex < createGame.gameSizeInt * createGame.gameSizeInt; badIndex++) {
+                                    if (gameBoard.children[badIndex] == badImage) {
+                                        break;
+                                    }
+                                }
+                                gameBoard.insertBefore(gameBoard.children[badIndex + 1], gameBoard.children[badIndex + createGame.gameSizeInt + 1])
+
+                                previousMoveDireciton = moveDirection;
+                                break;
+                            } else if (moveDirection == "bottom" && childIndex + createGame.gameSizeInt < createGame.gameSizeInt * createGame.gameSizeInt) {
+                                // Get bottom element index
+                                for (var bottomIndex = 0; bottomIndex < createGame.gameSizeInt * createGame.gameSizeInt; bottomIndex++) {
+                                    if (gameBoard.children[bottomIndex] == badImage) {
+                                        bottomIndex += createGame.gameSizeInt;
+                                        break;
+                                    }
+                                }
+                                console.log(bottomIndex);
+
+                                let bottomSibTop = gameBoard.children[bottomIndex].style.top
+                                let badImageTop = badImage.style.top
+
+                                // Change position for sibling
+                                gameBoard.children[bottomIndex].style.top = badImageTop
+
+                                // Change position for bad image
+                                badImage.style.top = bottomSibTop
+
+                                // Change location of bad image
+                                if (bottomIndex + 1 == createGame.gameSizeInt * createGame.gameSizeInt) {
+                                    gameBoard.insertBefore(badImage, null)
+                                } else {
+                                    gameBoard.insertBefore(badImage, gameBoard.children[bottomIndex + 1])
+                                }
+
+                                // Change location of good image
+                                // Get location of bad image
+                                for (var badIndex = 0; badIndex < createGame.gameSizeInt * createGame.gameSizeInt; badIndex++) {
+                                    if (gameBoard.children[badIndex] == badImage) {
+                                        break;
+                                    }
+                                }
+                                // There is a problem
+                                gameBoard.insertBefore(gameBoard.children[badIndex - 1], gameBoard.children[badIndex - createGame.gameSizeInt])
+
+                                previousMoveDireciton = moveDirection;
+                                break;
+                            } else {
+                                console.log("nie ma miejsca");
+                            }
+
+                        }
+                    }
+                    counter++
+                    if (counter == Math.pow(createGame.gameSizeInt, 3)) {
+                        clearInterval(xD)
+                    }
+                }, 25);
+            },
+            makeTilesClicakble: function () {
+                alert("xD")
+            },
+
+        }
+
+        function getAvailableMove(startOrder) {
+            let possibleMove;
+            document.getElementById("gameBoard").children
+            console.log("pos move " + possibleMove);
+
+            return possibleMove
+        }
+
+        // Add gameboard genrating functiond to buttons
+        for (let x = 0; x < gameModes.childElementCount; x++) {
+            gameModes.children[x].addEventListener("click", getGameboardSize);
+        }
+
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,17 @@
+Ilość ruchów podczas mieszania elementów przez komputer można zmienić w linijce 379 pliku index.html (wykładnik potęgi metody Math.pow())
+
+
+Zrealizowane punkty:
+
+(1p) dzielnie grafiki "na części" (w zależności od klikniętego buttona 3x3 itd.- dla każdego trybu gry):
+	 obrazek pocięty umieszczony w "puzzlach"
+(0.5p) slider w JS'ie (3 obrazki, zapętlony)
+  UWAGA: kolejne podpunkty muszą działać dla każdego z trybów
+(1p) przesuwanie:
+	(1p) w pełni działająca zamiana (tylko z sąsiadem)
+(1p) czas gry z zakończeniem (co "1ms", graficzny, startuje po "rozłożeniu"/wylosowaniu, po wygranej zgodny z tym wyświetlonym w informacji)
+(max 1p) zapewnienie wygranej ("rozkładanie" obrazka), musi być widoczne
+(max 1.5p) rekordy TOP10 (cookie, każdy z trybu, nie w alerce -> na stronie)
+	(1.5p) zawsze 10 najlepszych, w pełni działające z prezentacją 
+
+Rafał Jodłowski 3Ic

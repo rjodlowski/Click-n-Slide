@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script>
+        let ob = {
+            wzrost: 124,
+            zarost: "10cm",
+            rosnij: function () {
+                console.log(this);
+                alert(this.wzrost + 5);
+            },
+            gen_div: function () {
+                let el = document.createElement("div");
+                el.classList.add("klasa");
+                /*
+                let dys=this;
+                el.onclick=function(){
+                    console.log("aa",this,dys);
+                    alert(this.wzrost);
+                }*/
+                /*
+                el.onclick=function(){
+                    console.log(this);
+                }.bind(this);
+                */
+                /*
+                el.onclick=(e)=>{
+                    console.log(this);
+                    console.log(this.wzrost,e.target);
+                }
+                */
+                document.body.appendChild(el);
+            }
+        }
+        console.log(ob.wzrost);
+        console.log(ob["zarost"]);
+        //ob.rosnij();
+        ob.gen_div();
+
+        console.log(document.body);
+    </script>
+</head>
+
+<body>
+
+</body>
+
+</html>
